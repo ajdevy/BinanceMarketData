@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Binance</string>
+    <string name="order_book">Order book</string>
+    <string name="trades">Trades</string>
+</resources>

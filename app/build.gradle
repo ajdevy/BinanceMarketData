@@ -1,0 +1,91 @@
+apply plugin: 'com.android.application'
+
+apply plugin: 'kotlin-android'
+
+apply plugin: 'kotlin-android-extensions'
+
+apply plugin: 'kotlin-kapt'
+
+android {
+    compileSdkVersion 26
+    defaultConfig {
+        applicationId "com.numbers"
+        minSdkVersion 26
+        targetSdkVersion 26
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        multiDexEnabled true
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    dataBinding {
+        enabled = true
+    }
+    packagingOptions {
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/rxjava.properties'
+    }
+    buildToolsVersion '27.0.3'
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+final RETROFIT_VERSION = '2.2.0'
+final RXJAVA_VERSION = '2.0.1'
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.0-beta5'
+    implementation "io.reactivex.rxjava2:rxandroid:$RXJAVA_VERSION"
+    implementation "io.reactivex.rxjava2:rxjava:$RXJAVA_VERSION"
+    implementation "com.trello.rxlifecycle2:rxlifecycle:$RXJAVA_VERSION"
+    implementation "com.trello.rxlifecycle2:rxlifecycle-android:$RXJAVA_VERSION"
+    implementation "com.trello.rxlifecycle2:rxlifecycle-components:$RXJAVA_VERSION"
+    implementation 'com.eccyan:rxjava-optional:1.1.0'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.8.8'
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.8.8'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.8.8'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-joda:2.8.8'
+    implementation 'joda-time:joda-time:2.8.2'
+    implementation 'com.squareup.okhttp3:okhttp:3.6.0'
+    implementation 'com.squareup.picasso:picasso:2.5.2'
+    implementation "com.squareup.retrofit2:retrofit:$RETROFIT_VERSION"
+    implementation "com.squareup.retrofit2:adapter-rxjava:$RETROFIT_VERSION"
+    implementation "com.squareup.retrofit2:converter-jackson:$RETROFIT_VERSION"
+    implementation "com.squareup.retrofit2:converter-scalars:$RETROFIT_VERSION"
+    implementation "com.squareup.retrofit2:adapter-rxjava2:$RETROFIT_VERSION"
+    provided 'javax.annotation:jsr250-api:1.0'
+    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+    implementation 'com.android.support:design:26.1.0'
+    implementation 'android.arch.lifecycle:extensions:1.0.0'
+    implementation 'android.arch.persistence.room:runtime:1.0.0'
+    implementation 'com.github.salomonbrys.kodein:kodein:4.1.0'
+    implementation 'com.github.salomonbrys.kodein:kodein-android:4.1.0'
+    implementation 'com.github.binance-exchange:binance-java-api:master-SNAPSHOT'
+
+    kapt 'com.android.databinding:compiler:3.0.1'
+
+    implementation 'com.trello.rxlifecycle2:rxlifecycle-kotlin:2.2.1'
+
+    implementation 'com.trello.rxlifecycle2:rxlifecycle-android-lifecycle-kotlin:2.2.1'
+
+    annotationProcessor "android.arch.persistence.room:compiler:1.0.0"
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'android.arch.core:core-testing:1.0.0'
+    testImplementation 'android.arch.persistence.room:testing:1.0.0'
+    androidTestImplementation 'com.android.support.test:runner:1.0.1'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.1'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+}

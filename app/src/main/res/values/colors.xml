@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="dark_background">#12161c</color>
+    <color name="sellRed">#e50370</color>
+    <color name="buyGreen">#74a700</color>
+</resources>

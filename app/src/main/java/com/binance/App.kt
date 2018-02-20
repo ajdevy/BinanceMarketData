@@ -6,6 +6,7 @@ import com.binance.api.client.BinanceApiAsyncRestClient
 import com.binance.api.client.BinanceApiClientFactory
 import com.binance.api.client.BinanceApiWebSocketClient
 import com.binance.api.client.domain.general.ExchangeInfo
+import com.binance.currencypairs.CurrencyPairSubjectInteractor
 import com.binance.currencypairs.data.CurrencyPairList
 import com.binance.currencypairs.data.CurrencyPairMarketData
 import com.binance.ui.MainActivity
@@ -14,10 +15,7 @@ import com.binance.websocket.MyBinanceApiWebSocketClient
 import com.github.salomonbrys.kodein.*
 import com.github.salomonbrys.kodein.android.autoAndroidModule
 import com.squareup.picasso.Picasso
-import io.reactivex.schedulers.Schedulers
-import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.Subject
-import java.util.stream.Collectors
 
 class App : Application(), KodeinAware {
 
@@ -31,44 +29,18 @@ class App : Application(), KodeinAware {
         bind<BinanceApiClientFactory>() with singleton { BinanceApiClientFactory.newInstance() }
         bind<CurrencyPairList>() with singleton { CurrencyPairList() }
 
-        bind<Subject<List<CurrencyPairMarketData>>>("currencyPairSubject") with
-                singleton {
-                    val currencyPairSubject = BehaviorSubject.create<List<CurrencyPairMarketData>>().toSerialized()
-                    val binanceWebSocketClient: MyBinanceApiWebSocketClient = instance()
-                    val currencyPairs: CurrencyPairList = instance()
-                    val binanceApiAsyncRestClient: BinanceApiAsyncRestClient = instance()
+        bind<CurrencyPairSubjectInteractor>() with singleton {
+            CurrencyPairSubjectInteractor(instance(), instance(), instance())
+        }
 
-                    //initial population of currencyPairMarketData
-                    binanceApiAsyncRestClient.getAll24HrPriceStatistics { allPricePairs ->
-                        currencyPairs.initItems(allPricePairs)
-                        currencyPairSubject.onNext(currencyPairs)
-                    }
-                    //subscribe for updating currencyPairMarketData
-                    binanceWebSocketClient.listenForAllMarketTickersEventMap()
-                            .onErrorResumeNext(binanceWebSocketClient.listenForAllMarketTickersEventMap()
-                                    .doOnNext { "onErrorResumeNext has been called" })
-                            .subscribeOn(Schedulers.io())
-                            .subscribe(
-                                    { tickers ->
-                                        val newCurrencyPairsMarketData = tickers.stream()
-                                                .map { ticker ->
-                                                    CurrencyPairMarketData(ticker)
-                                                }
-                                                .collect(Collectors.toList())
-                                        currencyPairs.updateItems(newCurrencyPairsMarketData)
-                                        currencyPairSubject.onNext(currencyPairs)
-//                                        Log.d(TAG, "all market tickers event $currencyPairs")
-                                    },
-                                    { throwable ->
-                                        Log.e(TAG, "All market tickers subject broke", throwable)
-                                    })
-                    return@singleton currencyPairSubject
-                }
+        bind<Subject<List<CurrencyPairMarketData>>>("currencyPairSubject") with singleton {
+            return@singleton instance<CurrencyPairSubjectInteractor>().create()
+        }
 
         bind<InMemory<ExchangeInfo>>() with singleton {
-            val binanceApiAsyncRestClient: BinanceApiAsyncRestClient = instance()
             val exchangeInfo = InMemory<ExchangeInfo>()
-            binanceApiAsyncRestClient.getExchangeInfo({
+
+            instance<BinanceApiAsyncRestClient>().getExchangeInfo({
                 Log.d(MainActivity.TAG, "exchange info $it")
                 exchangeInfo.set(it)
             })
@@ -82,4 +54,12 @@ class App : Application(), KodeinAware {
         bind<String>() with instance("DemoApplication")
     }
 
+    override fun onCreate() {
+        super.onCreate()
+        Thread.setDefaultUncaughtExceptionHandler(
+                { thread: Thread, throwable: Throwable ->
+
+                    Log.e(TAG, "Got an uncaught exception", throwable)
+                })
+    }
 }

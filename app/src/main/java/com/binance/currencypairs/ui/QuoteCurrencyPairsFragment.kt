@@ -13,9 +13,9 @@ import android.view.ViewGroup
 import com.binance.R
 import com.binance.currencypairs.data.CurrencyPairMarketData
 import com.binance.databinding.FragmentCurrencyPairsBinding
+import com.binance.ui.CurrencyPairAdapter
 import com.github.salomonbrys.kodein.android.KodeinSupportFragment
 import com.github.salomonbrys.kodein.instance
-import com.numbers.ui.CurrencyPairAdapter
 import com.trello.rxlifecycle2.kotlin.bindToLifecycle
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -64,17 +64,23 @@ class QuoteCurrencyPairsFragment : KodeinSupportFragment() {
     }
 
     private fun setupListView(recyclerView: RecyclerView) {
-        val recyclerViewAdapter = CurrencyPairAdapter()
+        val recyclerViewAdapter = CurrencyPairAdapter(getQuoteAssetArgument())
         recyclerView.layoutManager = LinearLayoutManager(activity)
         recyclerView.adapter = recyclerViewAdapter
 
         listViewModel = ViewModelProviders.of(this)
                 .get(CurrencyPairViewHolder::class.java)
 
+        listViewModel.quoteCurrencyToUsdMarketData.observe(
+                this,
+                Observer {
+                    it?.let { recyclerViewAdapter.setUsdToQuoteCurrencyMarketData(it) }
+                })
+
         listViewModel.currencyPairsMarketData.observe(
                 this,
                 Observer {
-                    it?.let { recyclerViewAdapter.updateItems(it) }
+                    it?.let { recyclerViewAdapter.setItems(it) }
                 })
 
         val quoteAsset = (getQuoteAssetArgument() ?: "").toLowerCase()
@@ -94,7 +100,7 @@ class QuoteCurrencyPairsFragment : KodeinSupportFragment() {
                             .toList()
                             .toObservable()
                 }
-                .subscribeOn(Schedulers.computation())
+                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .bindToLifecycle(recyclerView)
                 .subscribe(
@@ -104,13 +110,57 @@ class QuoteCurrencyPairsFragment : KodeinSupportFragment() {
                         { throwable ->
                             Log.e(TAG, "currencyPairSubject broke", throwable)
                         })
+
+        currencyPairSubject
+                .throttleFirst(1, TimeUnit.MINUTES)
+                .flatMap {
+                    Observable.fromIterable(it)
+                            .filter {
+                                val lowerCaseSymbol = it.symbol.toLowerCase()
+                                lowerCaseSymbol.startsWith(quoteAsset) && lowerCaseSymbol.endsWith("usdt")
+                            }
+                            .firstElement()
+                            .toObservable()
+                }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .bindToLifecycle(recyclerView)
+                .subscribe(
+                        { currencyPairMarketData ->
+                            listViewModel.quoteCurrencyToUsdMarketData.value = currencyPairMarketData
+                        },
+                        { throwable ->
+                            Log.e(TAG, "currencyPairSubject usd to quote currency broke", throwable)
+                        })
+
+        currencyPairSubject
+                .throttleFirst(1, TimeUnit.MINUTES)
+                .flatMap {
+                    Observable.fromIterable(it)
+                            .filter {
+                                val lowerCaseSymbol = it.symbol.toLowerCase()
+                                lowerCaseSymbol.startsWith(quoteAsset) && lowerCaseSymbol.endsWith("usdt")
+                            }
+                            .firstElement()
+                            .toObservable()
+                }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .bindToLifecycle(recyclerView)
+                .subscribe(
+                        { currencyPairMarketData ->
+                            listViewModel.quoteCurrencyToUsdMarketData.value = currencyPairMarketData
+                        },
+                        { throwable ->
+                            Log.e(TAG, "currencyPairSubject usd to quote currency broke", throwable)
+                        })
     }
 
-    private fun getQuoteAssetArgument(): String? {
+    private fun getQuoteAssetArgument(): String {
         if (arguments != null) {
-            return arguments.getString(EXTRA_QUOTE_ASSET)
+            return arguments.getString(EXTRA_QUOTE_ASSET, "")
         }
-        return null
+        return ""
     }
 
     private fun isFavoritesArgument(): Boolean {

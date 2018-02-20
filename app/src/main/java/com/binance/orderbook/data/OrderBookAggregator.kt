@@ -54,14 +54,13 @@ class OrderBookAggregator(private val currencyPairSymbol: String,
     fun listenForChanges(): Flowable<OrderBookData> {
         return binanceWebSocketClient.listenForDepthEvents(currencyPairSymbol)
                 .doOnNext { onWebSocketDepthStreamConnected() }
-                .flatMap {
-                    val orderBookData = onOrderBookEvent(it)
+                .flatMap { depthEvent ->
+                    val orderBookData = onOrderBookEvent(depthEvent)
                     Log.d(TAG, " listenForChanges ${isOrderBookValid(orderBookData)}")
                     if (isOrderBookValid(orderBookData)) {
                         return@flatMap Flowable.just(orderBookData)
-                    } else {
-                        return@flatMap Flowable.empty<OrderBookData>()
                     }
+                    return@flatMap Flowable.empty<OrderBookData>()
                 }
     }
 

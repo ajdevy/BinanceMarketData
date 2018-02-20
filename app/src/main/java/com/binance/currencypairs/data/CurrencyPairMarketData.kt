@@ -81,4 +81,6 @@ data class CurrencyPairMarketData(val symbol: String,
         return symbol.hashCode()
     }
 
+
+
 }

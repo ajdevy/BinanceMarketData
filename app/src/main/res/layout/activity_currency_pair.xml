@@ -3,35 +3,157 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <android.support.constraint.ConstraintLayout
-        android:background="@color/dark_background"
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+
+        android:background="@color/dark_background"
+        android:paddingEnd="15dp"
+        android:paddingStart="15dp"
         tools:context=".ui.MainActivity"
         tools:showIn="@layout/activity_main">
 
-        <Button
-            app:layout_constraintStart_toStartOf="parent"
-            android:id="@+id/orderBookButton"
+        <TextView
+            android:id="@+id/currentPriceTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/order_book" />
+            android:textColor="@color/lightGray"
+            android:textSize="26sp"
+            tools:text="1.241234" />
 
-        <Button
-            app:layout_constraintEnd_toEndOf="parent"
-            android:id="@+id/tradesButton"
+        <ImageView
+            android:id="@+id/upDownArrowImageView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/trades" />
+            android:layout_toEndOf="@id/currentPriceTextView"
+            android:src="@drawable/ic_arrow_down"
+            android:visibility="invisible" />
 
-        <android.support.v4.view.ViewPager
+        <TextView
+            android:id="@+id/currentPriceInUsdTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBaseline="@id/currentPriceTextView"
+            android:layout_toEndOf="@id/upDownArrowImageView"
+            android:text="@string/usdPrice"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/priceChange"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/currentPriceTextView"
+            android:textColor="@color/lightGray"
+            tools:text="0.0000012" />
+
+        <TextView
+            android:id="@+id/priceChangePercentage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBaseline="@id/priceChange"
+            android:layout_marginStart="15dp"
+            android:layout_toEndOf="@id/priceChange"
+            android:textColor="@color/lightGray"
+            tools:text="0.2%" />
+
+        <TextView
+            android:id="@+id/volumeTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/priceChange"
+            android:paddingTop="5dp"
+            android:text="@string/volumeWithCurrencyPlaceholder"
+            android:textColor="@android:color/white" />
+
+        <TextView
+            android:id="@+id/lowPricePrefixTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBaseline="@id/lowPriceTextView"
+            android:layout_marginEnd="15dp"
+            android:layout_toStartOf="@id/lowPriceTextView"
+            android:paddingTop="5dp"
+            android:text="@string/low"
+            android:textColor="@color/lightGray" />
+
+        <TextView
+            android:id="@+id/lowPriceTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_below="@id/currentPriceTextView"
+            android:paddingTop="5dp"
+            android:textColor="@android:color/white"
+            tools:text="0.000325235" />
+
+        <TextView
+            android:id="@+id/highPricePrefixTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBaseline="@id/highPriceTextView"
+            android:layout_marginEnd="15dp"
+            android:layout_toStartOf="@id/highPriceTextView"
+            android:paddingTop="5dp"
+            android:text="@string/high"
+            android:textColor="@color/lightGray" />
+
+        <TextView
+            android:id="@+id/highPriceTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_below="@id/lowPriceTextView"
+            android:paddingTop="5dp"
+            android:textColor="@android:color/white"
+            tools:text="0.002885235" />
+
+        <ImageView
+            android:layout_below="@id/highPriceTextView"
+            android:id="@+id/candlestickGraphImageView"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/candlestick_graph" />
+
+        <LinearLayout
+            android:id="@+id/viewPagerSwitcher"
+            android:layout_width="match_parent"
+            android:layout_height="35dp"
+            android:layout_below="@id/candlestickGraphImageView"
+            android:layout_marginTop="15dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/orderBookButton"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@color/selectedDarkButtonBackground"
+                android:text="@string/order_book"
+                android:textAllCaps="false"
+                android:textColor="@color/selectedDarkButtonTextColor"
+                android:textSize="15sp"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <Button
+                android:id="@+id/tradesButton"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@color/deselectedDarkButtonBackground"
+                android:text="@string/trades"
+                android:textAllCaps="false"
+                android:textColor="@color/deselectedDarkButtonTextColor"
+                android:textSize="15sp"
+                app:layout_constraintEnd_toEndOf="parent" />
+        </LinearLayout>
+
+        <com.binance.util.ui.NonSwipeableViewPager
             android:id="@+id/liveMarketDataPager"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/orderBookButton">
-
-        </android.support.v4.view.ViewPager>
-
-    </android.support.constraint.ConstraintLayout>
+            android:layout_below="@id/viewPagerSwitcher" />
+    </RelativeLayout>
 
 </layout>

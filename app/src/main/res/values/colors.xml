@@ -1,9 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#FF4081</color>
+    <color name="colorPrimary">#1c242e</color>
+    <color name="colorPrimaryDark">#12161c</color>
+    <color name="colorAccent">#e0ad10</color>
+
     <color name="dark_background">#12161c</color>
+
+    <color name="lightGray">#999999</color>
+    <color name="darkGray">#606772</color>
     <color name="sellRed">#e50370</color>
+    <color name="sellRedDark">#900b4e</color>
     <color name="buyGreen">#74a700</color>
+
+    <color name="selectedDarkButtonTextColor">#fbb03b</color>
+    <color name="selectedDarkButtonBackground">#293645</color>
+    <color name="deselectedDarkButtonBackground">#1f2833</color>
+    <color name="deselectedDarkButtonTextColor">@android:color/white</color>
+
+    <color name="orderBookHeaderColor">#464d58</color>
+
+    <color name="ic_launcher_background">#ff151a1d</color>
 </resources>

@@ -127,10 +127,12 @@ class OrderBookFragment : KodeinSupportFragment() {
                             fragmentViewModel.asks.value = it.asks.entries.stream()
                                     .map { it.value }
                                     .sorted { first, second -> first.price.compareTo(second.price) }
+                                    .limit(20)
                                     .collect(Collectors.toList())
                             fragmentViewModel.bids.value = it.bids.entries.stream()
                                     .map { it.value }
                                     .sorted { first, second -> second.price.compareTo(first.price) }
+                                    .limit(20)
                                     .collect(Collectors.toList())
                         },
                         {

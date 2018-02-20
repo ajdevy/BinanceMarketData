@@ -42,8 +42,8 @@ public class FlowableBinanceApiWebSocketListener<T> extends WebSocketListener {
                 event = mapper.readValue(text, this.eventClass);
             }
             subject.onNext(event);
-        } catch (IOException e) {
-            subject.onError(e);
+        } catch (Throwable t) {
+            subject.onError(t);
         }
     }
 

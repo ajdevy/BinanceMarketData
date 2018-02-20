@@ -3,15 +3,15 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <LinearLayout
-        android:layout_marginStart="5dp"
-        android:layout_marginEnd="5dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:padding="10dp"
+        tools:background="@color/dark_background">
 
-        <LinearLayout
-            android:layout_width="wrap_content"
+        <RelativeLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical">
@@ -20,34 +20,71 @@
                 android:id="@+id/symbolNameTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:textAppearance="@style/TextAppearance.AppCompat.Headline"
-                tools:text="BTC/ETH" />
+                android:textColor="@android:color/white"
+                android:textSize="18sp"
+                tools:text="ETH" />
+
+            <TextView
+                android:id="@+id/quoteCurrencyNameTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@id/symbolNameTextView"
+                android:layout_toEndOf="@id/symbolNameTextView"
+                android:text="@string/quoteCurrencyNamePlaceholder"
+                android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+                android:textColor="@color/darkGray"
+                android:textSize="14sp" />
 
             <TextView
                 android:id="@+id/volumeTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
+                android:layout_below="@id/symbolNameTextView"
+                android:text="@string/volumeAbbreviation"
                 android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                tools:text="100500" />
+                android:textColor="@color/darkGray" />
+        </RelativeLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/lastPriceTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+                android:textColor="@android:color/white"
+                android:textSize="18sp"
+                tools:text="1.4" />
+
+            <TextView
+                android:id="@+id/usdPriceTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/usdPrice"
+                android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                android:textColor="@color/darkGray" />
         </LinearLayout>
 
         <TextView
-            android:id="@+id/lastPriceTextView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:id="@+id/changePercentTextView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:layout_marginBottom="6dp"
+            android:layout_marginEnd="5dp"
+            android:layout_marginStart="45dp"
+            android:layout_marginTop="6dp"
             android:layout_weight="1"
+            android:background="@color/buyGreen"
+            android:gravity="center"
             android:textAppearance="@style/TextAppearance.AppCompat.Headline"
-            tools:text="1.4" />
-
-        <TextView
-            android:id="@+id/changePercent"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center_horizontal"
-            android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
             tools:text="2%" />
     </LinearLayout>
 </layout>

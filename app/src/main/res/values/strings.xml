@@ -1,5 +1,14 @@
 <resources>
     <string name="app_name">Binance</string>
-    <string name="order_book">Order book</string>
-    <string name="trades">Trades</string>
+    <string name="order_book">Order Book</string>
+    <string name="trades">Market Trades</string>
+    <string name="volumeAbbreviation">Vol. %1$s</string>
+    <string name="usdPrice">$ %1$s</string>
+    <string name="priceChangePercent">%1$s%%</string>
+    <string name="ask">Ask</string>
+    <string name="bid">Bid</string>
+    <string name="quoteCurrencyNamePlaceholder">\u0020/ %1$s</string>
+    <string name="volumeWithCurrencyPlaceholder">Vol %1$s %2$s</string>
+    <string name="low">Low</string>
+    <string name="high">High</string>
 </resources>

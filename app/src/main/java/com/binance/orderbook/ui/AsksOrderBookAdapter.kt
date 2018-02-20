@@ -45,7 +45,7 @@ class AsksOrderBookAdapter :
     fun updateItems(newItems: List<OrderBookEntry>) {
         //FIXME: add items
         this.items = newItems
-//        if (this.items.updateItems(newItems)) {
+//        if (this.items.setItems(newItems)) {
         notifyDataSetChanged()
 //        }
     }

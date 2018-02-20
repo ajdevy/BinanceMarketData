@@ -7,15 +7,18 @@ import java.util.stream.Collectors
 class CurrencyPairList : ArrayList<CurrencyPairMarketData>() {
 
     private val isUpdating = AtomicBoolean(false)
+    private var areItemsInited = false
 
     fun initItems(newItems: List<TickerStatistics>) {
+
         isUpdating.set(true)
         forceUpdateItems(newItems.stream().map { CurrencyPairMarketData(it) }.collect(Collectors.toList()))
+        areItemsInited = true
         isUpdating.set(false)
     }
 
     fun updateItems(newItems: List<CurrencyPairMarketData>): Boolean {
-        if (isUpdating.compareAndSet(false, true)) {
+        if ( isUpdating.compareAndSet(false, true)) {
             forceUpdateItems(newItems)
             isUpdating.compareAndSet(true, false)
             return true

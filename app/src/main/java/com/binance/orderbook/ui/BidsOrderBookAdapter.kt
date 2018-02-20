@@ -6,7 +6,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import com.binance.api.client.domain.general.SymbolInfo
 import com.binance.api.client.domain.market.OrderBookEntry
-import com.binance.databinding.ItemCurrencyPairBinding
+import com.binance.databinding.ItemBidOrderBookBinding
 import com.binance.util.removeTrailingZeros
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -24,7 +24,7 @@ class BidsOrderBookAdapter :
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): OrderBookDataViewHolder {
-        val itemBinding = ItemCurrencyPairBinding.inflate(
+        val itemBinding = ItemBidOrderBookBinding.inflate(
                 LayoutInflater.from(parent.context), parent, false)
 
         return OrderBookDataViewHolder(itemBinding)
@@ -50,7 +50,7 @@ class BidsOrderBookAdapter :
 //        }
     }
 
-    class OrderBookDataViewHolder(val binding: ItemCurrencyPairBinding)
+    class OrderBookDataViewHolder(val binding: ItemBidOrderBookBinding)
         : RecyclerView.ViewHolder(binding.root) {
 
         @SuppressLint("SetTextI18n")
@@ -66,17 +66,10 @@ class BidsOrderBookAdapter :
             } else {
                 orderBookData.price
             }
-            binding.symbolNameTextView.text = priceText
+            binding.bidPrice.text = priceText
 
             val quantityText = orderBookData.qty.removeTrailingZeros()
-//                    if (baseAssetPrecision != null) {
-//                BigDecimal(orderBookData.qty)
-//                        .setScale(baseAssetPrecision, RoundingMode.HALF_UP)
-//                        .toString()
-//            } else {
-//                orderBookData.qty
-//            }
-            binding.volumeTextView.text = quantityText
+            binding.bidAmount.text = quantityText
             binding.executePendingBindings()
         }
     }

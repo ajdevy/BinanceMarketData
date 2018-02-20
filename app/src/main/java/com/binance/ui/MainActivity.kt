@@ -19,6 +19,11 @@ class MainActivity : KodeinAppCompatActivity() {
 
     companion object {
         val TAG = MainActivity::javaClass.name
+
+        init {
+//            val policy = StrictMode.ThreadPolicy.Builder().detectAll().build()
+//            StrictMode.setThreadPolicy(policy)
+        }
     }
 
     //FIXME: get queote assets form server
@@ -46,7 +51,8 @@ class MainActivity : KodeinAppCompatActivity() {
         quoteAssets.forEach { adapter.addFragment(QuoteCurrencyPairsFragment.newInstance(it), it) }
 
         pager.adapter = adapter
-
+        //scroll to the second page by default
+        pager.setCurrentItem(1, false)
     }
 
 //    fun onCreateOptionsMenu(menu: Menu): Boolean {

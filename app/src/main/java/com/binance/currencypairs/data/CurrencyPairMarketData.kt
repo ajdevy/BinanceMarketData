@@ -6,6 +6,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 data class CurrencyPairMarketData(val symbol: String,
+                                  val priceChange: BigDecimal,
                                   val priceChangePercent: BigDecimal,
                                   val lastPrice: BigDecimal,
                                   val highPrice: BigDecimal,
@@ -42,6 +43,7 @@ data class CurrencyPairMarketData(val symbol: String,
 //        }
     constructor(ticker: Map<String, String>) : this(
             ticker["s"] ?: throw IllegalArgumentException("could not find symbol in ticker 's' : $ticker"),
+            BigDecimal(ticker["p"]),
             BigDecimal(ticker["P"]),
             BigDecimal(ticker["c"]),
             BigDecimal(ticker["h"]),
@@ -52,6 +54,7 @@ data class CurrencyPairMarketData(val symbol: String,
 
     constructor(tickerStatistics: TickerStatistics) : this(
             tickerStatistics.symbol,
+            BigDecimal(tickerStatistics.priceChange),
             BigDecimal(tickerStatistics.priceChangePercent),
             BigDecimal(tickerStatistics.lastPrice),
             BigDecimal(tickerStatistics.highPrice),
@@ -60,6 +63,7 @@ data class CurrencyPairMarketData(val symbol: String,
 
     constructor(ticker: AllMarketTickersEvent) : this(
             ticker.symbol,
+            BigDecimal(ticker.priceChange),
             BigDecimal(ticker.priceChangePercent),
             BigDecimal(ticker.currentDaysClosePrice),
             BigDecimal(ticker.highPrice),
@@ -80,7 +84,5 @@ data class CurrencyPairMarketData(val symbol: String,
     override fun hashCode(): Int {
         return symbol.hashCode()
     }
-
-
 
 }

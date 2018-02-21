@@ -12,7 +12,7 @@
     <color name="sellRedDark">#900b4e</color>
     <color name="buyGreen">#74a700</color>
 
-    <color name="selectedDarkButtonTextColor">#fbb03b</color>
+    <color name="selectedDarkButtonTextColor">@color/colorAccent</color>
     <color name="selectedDarkButtonBackground">#293645</color>
     <color name="deselectedDarkButtonBackground">#1f2833</color>
     <color name="deselectedDarkButtonTextColor">@android:color/white</color>

@@ -12,6 +12,8 @@ import com.binance.currencypairs.data.CurrencyPairMarketData
 import com.binance.ui.MainActivity
 import com.binance.util.InMemory
 import com.binance.websocket.MyBinanceApiWebSocketClient
+import com.f2prateek.rx.preferences2.Preference
+import com.f2prateek.rx.preferences2.RxSharedPreferences
 import com.github.salomonbrys.kodein.*
 import com.github.salomonbrys.kodein.android.autoAndroidModule
 import com.squareup.picasso.Picasso
@@ -23,6 +25,17 @@ class App : Application(), KodeinAware {
 
     override val kodein by Kodein.lazy {
         import(autoAndroidModule(this@App))
+
+        bind<RxSharedPreferences>() with singleton {
+            return@singleton RxSharedPreferences.create(
+                    getSharedPreferences("favorites_prefs", android.content.Context.MODE_PRIVATE))
+        }
+
+        bind<Preference<Set<String>>>("favorites") with singleton {
+            val rxSharedPreferences: RxSharedPreferences = instance()
+
+            return@singleton rxSharedPreferences.getStringSet("favorites", HashSet())
+        }
 
         bind<Picasso>() with instance(Picasso.with(this@App))
 

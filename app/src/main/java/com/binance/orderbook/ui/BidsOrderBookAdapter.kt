@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import com.binance.api.client.domain.general.SymbolInfo
 import com.binance.api.client.domain.market.OrderBookEntry
 import com.binance.databinding.ItemBidOrderBookBinding
+import com.binance.util.getQuotePrecisionFromMinimalPrice
 import com.binance.util.removeTrailingZeros
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -43,11 +44,8 @@ class BidsOrderBookAdapter :
     }
 
     fun updateItems(newItems: List<OrderBookEntry>) {
-        //FIXME: add items
         this.items = newItems
-//        if (this.items.updateItems(newItems)) {
         notifyDataSetChanged()
-//        }
     }
 
     class OrderBookDataViewHolder(val binding: ItemBidOrderBookBinding)
@@ -57,15 +55,14 @@ class BidsOrderBookAdapter :
         fun bind(orderBookData: OrderBookEntry,
                  baseAssetPrecision: Int?,
                  quotePrecision: Int?) {
-            //FIXME: bind correct layoutxml
-
-            val priceText = if (baseAssetPrecision != null) {
-                BigDecimal(orderBookData.price)
-                        .setScale(baseAssetPrecision, RoundingMode.HALF_UP)
-                        .toString()
-            } else {
-                orderBookData.price
-            }
+            val priceText =
+                    if (quotePrecision != null) {
+                        BigDecimal(orderBookData.price)
+                                .setScale(quotePrecision, RoundingMode.HALF_UP)
+                                .toString()
+                    } else {
+                        orderBookData.price
+                    }
             binding.bidPrice.text = priceText
 
             val quantityText = orderBookData.qty.removeTrailingZeros()
@@ -75,14 +72,8 @@ class BidsOrderBookAdapter :
     }
 
     fun setScale(currencyPairInfo: SymbolInfo) {
-        //TODO: get min price precision and use it
-//            "filters": [{
-//                "filterType": "PRICE_FILTER",
-//                "minPrice": "0.00000100",
-//                "maxPrice": "100000.00000000",
-//                "tickSize": "0.00000100"
-//            },
         this.baseAssetPrecision = currencyPairInfo.baseAssetPrecision
-        this.quotePrecision = currencyPairInfo.quotePrecision
+        this.quotePrecision = currencyPairInfo.getQuotePrecisionFromMinimalPrice()
     }
 }
+

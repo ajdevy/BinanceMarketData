@@ -1,6 +1,6 @@
 package com.binance.util
 
-fun String.removeTrailingZeros(): CharSequence? {
+fun String.removeTrailingZeros(): String {
     var stringWithoutTrailingZeros = this
     //remove only zeros after the dot
     if (stringWithoutTrailingZeros.contains(".")) {

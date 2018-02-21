@@ -11,4 +11,6 @@
     <string name="volumeWithCurrencyPlaceholder">Vol %1$s %2$s</string>
     <string name="low">Low</string>
     <string name="high">High</string>
+    <string name="currencyPairPlaceholder">%1$s/%2$s</string>
+    <string name="favorites">Favorites</string>
 </resources>

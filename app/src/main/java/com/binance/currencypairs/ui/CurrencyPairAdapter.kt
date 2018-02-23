@@ -122,7 +122,6 @@ class CurrencyPairAdapter(private val quoteCurrency: String,
                 }
             }
 
-            //TODO: map usd text view
             val priceInUsd = getPriceInUsdText(currencyPairMarketData, usdToQuoteMarketData)
             binding.usdPriceTextView.text = priceInUsd
 
@@ -141,8 +140,8 @@ class CurrencyPairAdapter(private val quoteCurrency: String,
 
             val formatter = NumberFormat.getInstance(Locale.US) as DecimalFormat
             val symbols = formatter.decimalFormatSymbols
-            symbols.setGroupingSeparator(',')
-            formatter.setDecimalFormatSymbols(symbols)
+            symbols.groupingSeparator = ','
+            formatter.decimalFormatSymbols = symbols
 
             val volumeString = formatter.format(currencyPairMarketData.volume.setScale(0, RoundingMode.HALF_UP))
             binding.volumeTextView.text = binding.root.context.getString(

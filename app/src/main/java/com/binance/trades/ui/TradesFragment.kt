@@ -7,25 +7,39 @@ import android.databinding.DataBindingUtil
 import android.os.Bundle
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.binance.R
-import com.binance.currencypairs.data.CurrencyPairMarketData
-import com.binance.currencypairs.ui.QuoteCurrencyPairsFragment
+import com.binance.api.client.domain.event.AggTradeEvent
+import com.binance.api.client.domain.general.ExchangeInfo
+import com.binance.currencypairs.ui.SingleCurrencyPairActivityViewModel
 import com.binance.databinding.FragmentTradesBinding
+import com.binance.rest.MyBinanceApiAsyncRestClient
+import com.binance.trades.data.TradeData
+import com.binance.util.InMemory
+import com.binance.websocket.MyBinanceApiWebSocketClient
 import com.github.salomonbrys.kodein.android.KodeinSupportFragment
 import com.github.salomonbrys.kodein.instance
-import io.reactivex.subjects.Subject
+import com.trello.rxlifecycle2.kotlin.bindToLifecycle
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
+
 
 class TradesFragment : KodeinSupportFragment() {
 
-    private val currencyPairSubject by instance<Subject<List<CurrencyPairMarketData>>>("currencyPairSubject")
+    private val binanceRestClient: MyBinanceApiAsyncRestClient by instance()
+    private val binanceWebSocketClient by instance<MyBinanceApiWebSocketClient>()
+    private val exchangeInfo by instance<InMemory<ExchangeInfo>>()
 
+    private var tradesWebSocket: MyBinanceApiWebSocketClient.FlowableWebSocketClient<AggTradeEvent>? = null
     private lateinit var fragmentViewModel: TradesFragmentViewModel
 
     companion object {
-        private val TAG: String = QuoteCurrencyPairsFragment.javaClass.name
+        val TRADE_COUNT_TO_SHOW = SingleCurrencyPairActivityViewModel.BOTTOM_LIST_MAX_ITEM_COUNT
+
+        private val TAG: String = TradesFragment::class.java.name
         private val EXTRA_SYMBOL: String = "EXTRA_SYMBOL"
 
         fun newInstance(symbol: String): TradesFragment {
@@ -38,59 +52,105 @@ class TradesFragment : KodeinSupportFragment() {
         }
     }
 
-    @SuppressLint("MissingSuperCall")
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val symbol = getSymbolArgument()
-        //FIXME: trades subject
-//        currencyPairSubject
-//                .throttleFirst(4, TimeUnit.SECONDS)
-//                .flatMap {
-//                    Observable.fromIterable(it)
-//                            .filter { it.symbol == symbol }
-//                            .firstElement()
-//                            .toObservable()
-//                }
-//                .subscribeOn(Schedulers.computation())
-//                .observeOn(AndroidSchedulers.mainThread())
-//                .subscribe(
-//                        { currencyPairMarketData ->
-//                            fragmentViewModel.trades.value = currencyPairMarketData
-//                        },
-//                        { throwable ->
-//                            Log.e(TAG, "currencyPairSubject broke", throwable)
-//                        })
-
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(inflater: LayoutInflater,
+                              container: ViewGroup?,
+                              savedInstanceState: Bundle?): View? {
 
         val binding = DataBindingUtil.inflate<FragmentTradesBinding>(
                 inflater, R.layout.fragment_trades, container, false)
 
         setupListView(binding.recyclerView)
 
+        val symbol = getSymbolArgument()
+
+        setupTimezone(binding.recyclerView)
+        getAndShowLastTrades(binding.recyclerView, symbol)
+        listenForNewTrades(binding.recyclerView, symbol)
+
         return binding.root
+    }
+
+    private fun setupTimezone(recyclerView: RecyclerView) {
+        exchangeInfo.asObservable()
+                .subscribeOn(Schedulers.computation())
+                .observeOn(AndroidSchedulers.mainThread())
+                .bindToLifecycle(recyclerView)
+                .subscribe(
+                        {
+                            fragmentViewModel.timezone.value = it.timezone
+                        },
+                        { Log.e(TAG, "Could not get exchange info for timezone") })
+    }
+
+    @SuppressLint("MissingSuperCall")
+    override fun onDestroy() {
+        super.onDestroy()
+        tradesWebSocket?.closeSocket()
+    }
+
+    private fun getAndShowLastTrades(recyclerView: RecyclerView, symbol: String) {
+        binanceRestClient.getAggTrades(
+                symbol, null, TradesFragment.TRADE_COUNT_TO_SHOW, null, null)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .bindToLifecycle(recyclerView)
+                .subscribe(
+                        {
+                            fragmentViewModel.trades.value = TradeData.from(it)
+                        },
+                        { Log.e(TAG, "Could not get agg trades for $symbol") })
+    }
+
+    private fun listenForNewTrades(recyclerView: RecyclerView, symbol: String) {
+        val newTradesWebSocket = binanceWebSocketClient.listenForAggTradeEvent(symbol)
+        tradesWebSocket = newTradesWebSocket
+
+        newTradesWebSocket.toFlowable()
+                .map { TradeData(it) }
+                .onBackpressureBuffer()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .bindToLifecycle(recyclerView)
+                .subscribe(
+                        {
+                            fragmentViewModel.newTrade.value = it
+                        },
+                        { throwable ->
+                            Log.e(TAG, "listenForNewTrades broke", throwable)
+                            listenForNewTrades(recyclerView, symbol)
+                        })
     }
 
     private fun setupListView(recyclerView: RecyclerView) {
         val recyclerViewAdapter = TradesAdapter()
         recyclerView.layoutManager = LinearLayoutManager(activity)
         recyclerView.adapter = recyclerViewAdapter
-
+        recyclerView.itemAnimator = null
         fragmentViewModel = ViewModelProviders.of(this)
                 .get(TradesFragmentViewModel::class.java)
 
         fragmentViewModel.trades.observe(
                 this,
                 Observer {
-                    it?.let { recyclerViewAdapter.updateItems(it) }
+                    it?.let { recyclerViewAdapter.addItems(it) }
+                })
+
+        fragmentViewModel.newTrade.observe(
+                this,
+                Observer {
+                    it?.let { recyclerViewAdapter.addItem(it) }
+                })
+
+        fragmentViewModel.timezone.observe(
+                this,
+                Observer {
+                    it?.let { recyclerViewAdapter.setTimezone(it) }
                 })
     }
 
-    private fun getSymbolArgument(): String? {
+    private fun getSymbolArgument(): String {
         if (arguments != null) {
-            return arguments.getString(EXTRA_SYMBOL,"")
+            return arguments.getString(EXTRA_SYMBOL, "")
         }
         return ""
     }

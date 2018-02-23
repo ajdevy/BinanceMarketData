@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import com.binance.R
 import com.binance.api.client.domain.general.SymbolInfo
 import com.binance.api.client.domain.market.OrderBookEntry
 import com.binance.databinding.ItemAskOrderBookBinding
@@ -32,15 +33,23 @@ class AsksOrderBookAdapter :
     }
 
     override fun onBindViewHolder(holder: OrderBookDataViewHolder, position: Int) {
-        holder.bind(items[position], baseAssetPrecision, quotePrecision)
+        if (items.size > position) {
+            holder.bind(items[position], baseAssetPrecision, quotePrecision)
+        } else {
+            holder.bindEmptyItem()
+        }
     }
 
     override fun getItemCount(): Int {
-        return items.size
+        return OrderBookFragment.ORDER_BOOK_ITEM_COUNT.toInt()
     }
 
     override fun getItemId(position: Int): Long {
-        return items[position].price.hashCode().toLong()
+        if (items.size > position) {
+            return items[position].price.hashCode().toLong()
+        } else {
+            return -1
+        }
     }
 
     fun updateItems(newItems: List<OrderBookEntry>) {
@@ -68,6 +77,13 @@ class AsksOrderBookAdapter :
             val quantityText = orderBookData.qty.removeTrailingZeros()
             binding.askAmount.text = quantityText
             binding.executePendingBindings()
+        }
+
+        fun bindEmptyItem() {
+            val emptyOrderBookString = binding.root.context.getString(R.string.empty_order_book_or_trade_item_placeholder)
+            binding.askAmount.text = emptyOrderBookString
+            binding.askPrice.text = emptyOrderBookString
+
         }
     }
 

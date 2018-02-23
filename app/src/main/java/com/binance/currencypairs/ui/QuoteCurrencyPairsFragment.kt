@@ -36,7 +36,7 @@ class QuoteCurrencyPairsFragment : KodeinSupportFragment() {
     private lateinit var listViewModel: CurrencyPairViewHolder
 
     companion object {
-        private val TAG: String = QuoteCurrencyPairsFragment.javaClass.name
+        private val TAG: String = QuoteCurrencyPairsFragment::class.java.name
         private val EXTRA_QUOTE_ASSET: String = "EXTRA_QUOTE_ASSET"
         private val EXTRA_IS_FAVORITES: String = "EXTRA_IS_FAVORITES"
 
@@ -63,6 +63,7 @@ class QuoteCurrencyPairsFragment : KodeinSupportFragment() {
         val binding = DataBindingUtil.inflate<FragmentCurrencyPairsBinding>(
                 inflater, R.layout.fragment_currency_pairs, container, false)
 
+        Log.d(TAG,"onCreateView")
         setupListView(binding.recyclerView)
 
         return binding.root
@@ -92,7 +93,7 @@ class QuoteCurrencyPairsFragment : KodeinSupportFragment() {
         val isFavorites = isFavoritesArgument()
         currencyPairSubject
                 .throttleFirst(4, TimeUnit.SECONDS)
-                .flatMap {
+                .flatMapSingle {
                     Observable.fromIterable(it)
                             .filter {
                                 if (isFavorites) {
@@ -103,13 +104,13 @@ class QuoteCurrencyPairsFragment : KodeinSupportFragment() {
                                 }
                             }
                             .toList()
-                            .toObservable()
                 }
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .bindToLifecycle(recyclerView)
+//                .bindToLifecycle(recyclerView)
                 .subscribe(
                         { currencyPairMarketDatas ->
+                            Log.d(TAG,"got new items for currency pair ${currencyPairMarketDatas.size}, $this")
                             listViewModel.currencyPairsMarketData.value = currencyPairMarketDatas
                         },
                         { throwable ->

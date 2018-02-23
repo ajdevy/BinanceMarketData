@@ -15,6 +15,8 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -22,8 +24,8 @@
                 android:id="@+id/favoritesIconImageView"
                 android:layout_width="12dp"
                 android:layout_height="12dp"
-                android:visibility="invisible"
-                android:src="@android:drawable/star_big_on" />
+                android:src="@android:drawable/star_big_on"
+                android:visibility="invisible" />
 
             <TextView
                 android:id="@+id/symbolNameTextView"
@@ -59,7 +61,8 @@
                 android:textColor="@color/darkGray" />
         </RelativeLayout>
 
-        <LinearLayout
+        <RelativeLayout
+            android:paddingStart="10dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -76,29 +79,31 @@
                 tools:text="1.4" />
 
             <TextView
+                android:layout_below="@id/lastPriceTextView"
+                android:layout_alignStart="@+id/lastPriceTextView"
                 android:id="@+id/usdPriceTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/usdPrice"
                 android:textAppearance="@style/TextAppearance.AppCompat.Small"
                 android:textColor="@color/darkGray" />
-        </LinearLayout>
+        </RelativeLayout>
 
         <TextView
             android:id="@+id/changePercentTextView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="30dp"
             android:layout_gravity="center"
             android:layout_marginBottom="6dp"
             android:layout_marginEnd="5dp"
-            android:layout_marginStart="45dp"
+            android:layout_marginStart="35dp"
             android:layout_marginTop="10dp"
             android:layout_weight="1"
             android:background="@color/buyGreen"
             android:gravity="center"
             android:textAppearance="@style/TextAppearance.AppCompat.Headline"
             android:textColor="@android:color/white"
-            android:textSize="16sp"
+            android:textSize="14sp"
             tools:text="2%" />
     </LinearLayout>
 </layout>

@@ -2,9 +2,9 @@ package com.binance.currencypairs
 
 import android.util.Log
 import com.binance.App
-import com.binance.api.client.BinanceApiAsyncRestClient
 import com.binance.currencypairs.data.CurrencyPairList
 import com.binance.currencypairs.data.CurrencyPairMarketData
+import com.binance.rest.MyBinanceApiAsyncRestClient
 import com.binance.websocket.MyBinanceApiWebSocketClient
 import io.reactivex.Observable
 import io.reactivex.disposables.Disposable
@@ -14,11 +14,10 @@ import io.reactivex.subjects.Subject
 import org.joda.time.DateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
-import java.util.logging.Level
 import java.util.stream.Collectors
 
 class CurrencyPairSubjectInteractor(private val binanceWebSocketClient: MyBinanceApiWebSocketClient,
-                                    private val binanceApiAsyncRestClient: BinanceApiAsyncRestClient,
+                                    private val binanceApiAsyncRestClient: MyBinanceApiAsyncRestClient,
                                     private val currencyPairs: CurrencyPairList) {
 
     private val TAG = App::class.java.name
@@ -27,17 +26,23 @@ class CurrencyPairSubjectInteractor(private val binanceWebSocketClient: MyBinanc
 
     private var lastUpdateTime: Optional<DateTime> = Optional.empty()
 
-    val currencyPairSubject = BehaviorSubject.create<List<CurrencyPairMarketData>>().toSerialized()
+    private var allMarketTickersSocket: MyBinanceApiWebSocketClient.FlowableWebSocketClient<MutableList<MutableMap<String, String>>>? = null
+
+    private val currencyPairSubject = BehaviorSubject.create<List<CurrencyPairMarketData>>().toSerialized()
 
     fun create(): Subject<List<CurrencyPairMarketData>> {
 
         //initial population of currencyPairMarketData
-        binanceApiAsyncRestClient.getAll24HrPriceStatistics { allPricePairs ->
-            currencyPairs.initItems(allPricePairs)
-            val currencyPairsToPropogate = ArrayList<CurrencyPairMarketData>()
-            currencyPairsToPropogate.addAll(currencyPairs)
-            currencyPairSubject.onNext(currencyPairsToPropogate)
-        }
+        binanceApiAsyncRestClient.getAll24HrPriceStatistics()
+                .subscribeOn(Schedulers.io())
+                .subscribe(
+                        { allPricePairs ->
+                            currencyPairs.initItems(allPricePairs)
+                            val currencyPairsToPropogate = ArrayList<CurrencyPairMarketData>()
+                            currencyPairsToPropogate.addAll(currencyPairs)
+                            currencyPairSubject.onNext(currencyPairsToPropogate)
+                        },
+                        { Log.e(TAG, "Could not get all 24hr price statistics", it) })
 
         subscribeToAllMarketTickers()
 
@@ -51,29 +56,33 @@ class CurrencyPairSubjectInteractor(private val binanceWebSocketClient: MyBinanc
         if (currentExistingSubscription != null && !currentExistingSubscription.isDisposed) {
             currentExistingSubscription.dispose()
         }
-        //subscribe for updating currencyPairMarketData
-        val newSubscription = binanceWebSocketClient.listenForAllMarketTickersEventMap()
-                .subscribeOn(Schedulers.io())
-                .subscribe(
-                        { tickersNotification ->
-                            val newCurrencyPairsMarketData = tickersNotification.stream()
-                                    .filter { it != null }
-                                    .map { ticker ->
-                                        CurrencyPairMarketData(ticker)
-                                    }
-                                    .collect(Collectors.toList())
-                            currencyPairs.updateItems(newCurrencyPairsMarketData)
+        allMarketTickersSocket = binanceWebSocketClient.listenForAllMarketTickersEventMap()
+        val allMarketTickersSocket = this.allMarketTickersSocket
+        if (allMarketTickersSocket != null) {
+            //subscribe for updating currencyPairMarketData
+            val newSubscription = allMarketTickersSocket.toFlowable()
+                    .subscribeOn(Schedulers.io())
+                    .subscribe(
+                            { tickersNotification ->
+                                val newCurrencyPairsMarketData = tickersNotification.stream()
+                                        .filter { it != null }
+                                        .map { ticker ->
+                                            CurrencyPairMarketData(ticker)
+                                        }
+                                        .collect(Collectors.toList())
+                                currencyPairs.updateItems(newCurrencyPairsMarketData)
 
-                            val currencyPairsToPropogate = ArrayList<CurrencyPairMarketData>()
-                            currencyPairsToPropogate.addAll(currencyPairs)
-                            currencyPairSubject.onNext(currencyPairsToPropogate)
-                        },
-                        { throwable ->
-                            Log.e(TAG, "All market tickers subject broke", throwable)
+                                val currencyPairsToPropogate = ArrayList<CurrencyPairMarketData>()
+                                currencyPairsToPropogate.addAll(currencyPairs)
+                                currencyPairSubject.onNext(currencyPairsToPropogate)
+                            },
+                            { throwable ->
+                                Log.e(TAG, "All market tickers subject broke", throwable)
 
-                            subscribeToAllMarketTickers()
-                        })
-        existingSubscription = newSubscription
+                                subscribeToAllMarketTickers()
+                            })
+            existingSubscription = newSubscription
+        }
     }
 
     private fun setupReconnectOnNoEvents() {
@@ -87,7 +96,7 @@ class CurrencyPairSubjectInteractor(private val binanceWebSocketClient: MyBinanc
                 .filter { oneMinutesPassedSinceLastOrderBookUpdate() }
                 .subscribeOn(Schedulers.newThread())
                 .subscribe(
-                        { subscribeToAllMarketTickers()},
+                        { subscribeToAllMarketTickers() },
                         { Log.d(TAG, "Could not reconnect on no events", it) })
     }
 

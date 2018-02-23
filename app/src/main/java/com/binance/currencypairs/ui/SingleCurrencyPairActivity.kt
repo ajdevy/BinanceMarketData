@@ -179,45 +179,19 @@ class SingleCurrencyPairActivity : KodeinAppCompatActivity() {
         activityViewModel.currencyPairMarketData.observe(
                 this,
                 Observer { currentMarketData ->
-                    //FIXME: map data to views
                     currentMarketData?.let { currentMarketData ->
-                        val symbolInfo = this.symbolInfo
-                        //map current price in quote currency
-                        val lastPriceString: String
-                        val priceChangeString: String
-                        val lowPriceString: String
-                        val highPriceString: String
+                        mapPrices(binding,currentMarketData)
 
-                        if (symbolInfo != null) {
-                            val priceScale = symbolInfo.getQuotePrecisionFromMinimalPrice()
-                            lastPriceString = currentMarketData.lastPrice
-                                    .setScale(priceScale, RoundingMode.HALF_UP).toString()
-                            priceChangeString = currentMarketData.priceChange
-                                    .setScale(priceScale, RoundingMode.HALF_UP).toString()
-                            lowPriceString = currentMarketData.lowPrice
-                                    .setScale(priceScale, RoundingMode.HALF_UP).toString()
-                            highPriceString = currentMarketData.highPrice
-                                    .setScale(priceScale, RoundingMode.HALF_UP).toString()
-                        } else {
-                            lastPriceString = currentMarketData.lastPrice.toString()
-                            priceChangeString = currentMarketData.priceChange.toString()
-                            lowPriceString = currentMarketData.lowPrice.toString()
-                            highPriceString = currentMarketData.highPrice.toString()
-                        }
-
-                        binding.lowPriceTextView.text = lowPriceString
-                        binding.highPriceTextView.text = highPriceString
-
-                        binding.priceChange.text = priceChangeString
-                        binding.currentPriceTextView.text = lastPriceString
-
+                        //map price change percentage
                         binding.priceChangePercentage.text =
                                 binding.root.context.getString(
                                         R.string.priceChangePercent,
                                         currentMarketData.priceChangePercent.toString())
 
+                        //map price change perecentage color
                         val priceChangeTextColor = getPriceTextColor(
                                 binding.root.context, currentMarketData, previousCurrencyPairMarketData)
+
                         //map current price in quote currency color
                         binding.currentPriceTextView.setTextColor(priceChangeTextColor)
                         binding.priceChange.setTextColor(priceChangeTextColor)
@@ -228,6 +202,7 @@ class SingleCurrencyPairActivity : KodeinAppCompatActivity() {
                         mapUsdPriceTextView(
                                 binding, currentMarketData, quoteCurrencyToUsdMarketData)
 
+                        //map volume
                         binding.volumeTextView.text =
                                 binding.root.context.getString(
                                         R.string.volumeWithCurrencyPlaceholder,
@@ -236,9 +211,43 @@ class SingleCurrencyPairActivity : KodeinAppCompatActivity() {
                                                 .toString(),
                                         getAssetCurrency())
 
+                        //save market data for comparing later
                         previousCurrencyPairMarketData = currentMarketData
                     }
                 })
+    }
+
+    private fun mapPrices(binding: ActivityCurrencyPairBinding,
+                          currentMarketData: CurrencyPairMarketData) {
+        val symbolInfo = this.symbolInfo
+        //map current price in quote currency
+        val lastPriceString: String
+        val priceChangeString: String
+        val lowPriceString: String
+        val highPriceString: String
+
+        if (symbolInfo != null) {
+            val priceScale = symbolInfo.getQuotePrecisionFromMinimalPrice()
+            lastPriceString = currentMarketData.lastPrice
+                    .setScale(priceScale, RoundingMode.HALF_UP).toString()
+            priceChangeString = currentMarketData.priceChange
+                    .setScale(priceScale, RoundingMode.HALF_UP).toString()
+            lowPriceString = currentMarketData.lowPrice
+                    .setScale(priceScale, RoundingMode.HALF_UP).toString()
+            highPriceString = currentMarketData.highPrice
+                    .setScale(priceScale, RoundingMode.HALF_UP).toString()
+        } else {
+            lastPriceString = currentMarketData.lastPrice.toString()
+            priceChangeString = currentMarketData.priceChange.toString()
+            lowPriceString = currentMarketData.lowPrice.toString()
+            highPriceString = currentMarketData.highPrice.toString()
+        }
+
+        binding.lowPriceTextView.text = lowPriceString
+        binding.highPriceTextView.text = highPriceString
+
+        binding.priceChange.text = priceChangeString
+        binding.currentPriceTextView.text = lastPriceString
     }
 
     private fun listenForUsdToQuoteCurrencyChanges(binding: ActivityCurrencyPairBinding) {

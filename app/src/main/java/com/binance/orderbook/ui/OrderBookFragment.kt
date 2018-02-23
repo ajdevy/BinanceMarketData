@@ -11,11 +11,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.binance.R
-import com.binance.api.client.BinanceApiAsyncRestClient
 import com.binance.api.client.domain.general.ExchangeInfo
 import com.binance.currencypairs.ui.QuoteCurrencyPairsFragment
+import com.binance.currencypairs.ui.SingleCurrencyPairActivityViewModel
 import com.binance.databinding.FragmentOrderBookBinding
 import com.binance.orderbook.data.OrderBookAggregator
+import com.binance.rest.MyBinanceApiAsyncRestClient
 import com.binance.util.InMemory
 import com.binance.websocket.MyBinanceApiWebSocketClient
 import com.github.salomonbrys.kodein.android.KodeinSupportFragment
@@ -30,14 +31,16 @@ import java.util.stream.Collectors
 class OrderBookFragment : KodeinSupportFragment() {
 
     private val binanceWebSocketClient: MyBinanceApiWebSocketClient by instance()
-    private val binanceRestClient: BinanceApiAsyncRestClient by instance()
+    private val binanceRestClient: MyBinanceApiAsyncRestClient by instance()
     private val exchangeInfo by instance<InMemory<ExchangeInfo>>()
 
     private lateinit var fragmentViewModel: OrderBookFragmentViewModel
     private lateinit var orderBookAggregator: OrderBookAggregator
 
     companion object {
-        private val TAG: String = QuoteCurrencyPairsFragment.javaClass.name
+        val ORDER_BOOK_ITEM_COUNT = SingleCurrencyPairActivityViewModel.BOTTOM_LIST_MAX_ITEM_COUNT
+
+        private val TAG: String = QuoteCurrencyPairsFragment::class.java.name
         private val EXTRA_SYMBOL: String = "EXTRA_SYMBOL"
 
         fun newInstance(symbol: String): OrderBookFragment {
@@ -73,10 +76,12 @@ class OrderBookFragment : KodeinSupportFragment() {
         val asksAdapter = AsksOrderBookAdapter()
         binding.asksRecyclerView.layoutManager = LinearLayoutManager(activity)
         binding.asksRecyclerView.adapter = asksAdapter
+        binding.asksRecyclerView.itemAnimator = null
 
         val bidsAdapter = BidsOrderBookAdapter()
         binding.bidsRecyclerView.layoutManager = LinearLayoutManager(activity)
         binding.bidsRecyclerView.adapter = bidsAdapter
+        binding.bidsRecyclerView.itemAnimator = null
 
         val currentCurrencyPairSymbol = getSymbolArgument().toLowerCase()
 
@@ -116,10 +121,14 @@ class OrderBookFragment : KodeinSupportFragment() {
                     }
                 })
 
+        listenForOrderBookChanges(binding)
+    }
+
+    private fun listenForOrderBookChanges(binding: FragmentOrderBookBinding) {
         orderBookAggregator.listenForChanges()
                 .throttleFirst(1, TimeUnit.SECONDS)
                 .onErrorResumeNext(orderBookAggregator.listenForChanges())
-                .subscribeOn(Schedulers.computation())
+                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .bindToLifecycle(binding.root)
                 .subscribe(
@@ -127,17 +136,24 @@ class OrderBookFragment : KodeinSupportFragment() {
                             fragmentViewModel.asks.value = it.asks.entries.stream()
                                     .map { it.value }
                                     .sorted { first, second -> first.price.compareTo(second.price) }
-                                    .limit(20)
+                                    .limit(ORDER_BOOK_ITEM_COUNT.toLong())
                                     .collect(Collectors.toList())
+
                             fragmentViewModel.bids.value = it.bids.entries.stream()
                                     .map { it.value }
                                     .sorted { first, second -> second.price.compareTo(first.price) }
-                                    .limit(20)
+                                    .limit(ORDER_BOOK_ITEM_COUNT.toLong())
                                     .collect(Collectors.toList())
                         },
                         {
                             Log.e(TAG, "orderBookAggregator subject broke", it)
+                            listenForOrderBookChanges(binding)
                         })
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        orderBookAggregator.closeSockets()
     }
 
     private fun getSymbolArgument(): String {

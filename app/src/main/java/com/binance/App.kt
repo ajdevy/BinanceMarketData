@@ -2,14 +2,13 @@ package com.binance
 
 import android.app.Application
 import android.util.Log
-import com.binance.api.client.BinanceApiAsyncRestClient
 import com.binance.api.client.BinanceApiClientFactory
 import com.binance.api.client.BinanceApiWebSocketClient
 import com.binance.api.client.domain.general.ExchangeInfo
 import com.binance.currencypairs.CurrencyPairSubjectInteractor
 import com.binance.currencypairs.data.CurrencyPairList
 import com.binance.currencypairs.data.CurrencyPairMarketData
-import com.binance.ui.MainActivity
+import com.binance.rest.MyBinanceApiAsyncRestClient
 import com.binance.util.InMemory
 import com.binance.websocket.MyBinanceApiWebSocketClient
 import com.f2prateek.rx.preferences2.Preference
@@ -17,6 +16,7 @@ import com.f2prateek.rx.preferences2.RxSharedPreferences
 import com.github.salomonbrys.kodein.*
 import com.github.salomonbrys.kodein.android.autoAndroidModule
 import com.squareup.picasso.Picasso
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.Subject
 
 class App : Application(), KodeinAware {
@@ -37,8 +37,6 @@ class App : Application(), KodeinAware {
             return@singleton rxSharedPreferences.getStringSet("favorites", HashSet())
         }
 
-        bind<Picasso>() with instance(Picasso.with(this@App))
-
         bind<BinanceApiClientFactory>() with singleton { BinanceApiClientFactory.newInstance() }
         bind<CurrencyPairList>() with singleton { CurrencyPairList() }
 
@@ -53,16 +51,24 @@ class App : Application(), KodeinAware {
         bind<InMemory<ExchangeInfo>>() with singleton {
             val exchangeInfo = InMemory<ExchangeInfo>()
 
-            instance<BinanceApiAsyncRestClient>().getExchangeInfo({
-                Log.d(MainActivity.TAG, "exchange info $it")
-                exchangeInfo.set(it)
-            })
+            instance<MyBinanceApiAsyncRestClient>().getExchangeInfo()
+                    .subscribeOn(Schedulers.io())
+                    .subscribe(
+                            {
+                                Log.d(TAG, "exchange info $it")
+                                exchangeInfo.set(it)
+                            },
+                            {
+                                Log.e(TAG, "Could not get exchange info", it)
+                            })
             return@singleton exchangeInfo
         }
 
         bind<MyBinanceApiWebSocketClient>() with singleton { MyBinanceApiWebSocketClient() }
+
+
         bind<BinanceApiWebSocketClient>() with singleton { instance<MyBinanceApiWebSocketClient>() }
-        bind<BinanceApiAsyncRestClient>() with singleton { instance<BinanceApiClientFactory>().newAsyncRestClient() }
+        bind<MyBinanceApiAsyncRestClient>() with singleton { MyBinanceApiAsyncRestClient(null, null) }
 
         bind<String>() with instance("DemoApplication")
     }

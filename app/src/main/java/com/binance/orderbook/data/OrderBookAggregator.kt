@@ -1,10 +1,10 @@
 package com.binance.orderbook.data
 
 import android.util.Log
-import com.binance.api.client.BinanceApiAsyncRestClient
 import com.binance.api.client.domain.event.DepthEvent
 import com.binance.api.client.domain.market.OrderBook
 import com.binance.api.client.domain.market.OrderBookEntry
+import com.binance.rest.MyBinanceApiAsyncRestClient
 import com.binance.websocket.MyBinanceApiWebSocketClient
 import io.reactivex.Flowable
 import java.math.BigDecimal
@@ -15,53 +15,64 @@ import java.util.stream.Collectors
 
 class OrderBookAggregator(private val currencyPairSymbol: String,
                           private val binanceWebSocketClient: MyBinanceApiWebSocketClient,
-                          private val binanceApiAsyncRestClient: BinanceApiAsyncRestClient) {
+                          private val binanceApiAsyncRestClient: MyBinanceApiAsyncRestClient) {
 
     private val TAG = OrderBookAggregator::javaClass.name
 
     private val buffer: LinkedList<DepthEvent> = LinkedList()
     private val isOrderBookBeingInitialized = AtomicBoolean(false)
+    private var depthEventsSocket: MyBinanceApiWebSocketClient.FlowableWebSocketClient<DepthEvent>? = null
 
     private var orderBookData: OrderBookData? = null
 
-    init {
-//      - [DONE] Open a stream to wss://stream.binance.com:9443/ws/bnbbtc@depth
-//       [DONE]- Buffer the events you receive from the stream
-//     [DONE]           Get a depth snapshot from **https://www.binance.com/api/v1/depth?symbol=BNBBTC&limit=1000"
-//      []  -Drop any event where u is <= lastUpdateId in the snapshot
-//        -The first processed should have U <= lastUpdateId+1 AND u >= lastUpdateId+1
+//      -  Open a stream to wss://stream.binance.com:9443/ws/bnbbtc@depth
+//      -  Buffer the events you receive from the stream
+//      -  Get a depth snapshot from **https://www.binance.com/api/v1/depth?symbol=BNBBTC&limit=1000"
+//      -  Drop any event where u is <= lastUpdateId in the snapshot
+//      -  The first processed should have U <= lastUpdateId+1 AND u >= lastUpdateId+1
 //                "U": 157,           // First update ID in event
 //                "u": 160,           // last update ID in event
-//        -While listening to the stream, each new event's U should be equal to the previous event's u+1
-//        -The data in each event is the absolute quantity for a price level
-//        -If the quantity is 0, remove the price level
-//        -Receiving an event that removes a price level that is not in your local order book can happen and is normal.
-    }
+//      -  While listening to the stream, each new event's U should be equal to the previous event's u+1
+//      -  The data in each event is the absolute quantity for a price level
+//      -  If the quantity is 0, remove the price level
+//      -  Receiving an event that removes a price level that is not in your local order book can happen and is normal.
 
     private fun initializeOrderBook() {
         if (isOrderBookBeingInitialized.compareAndSet(false, true)) {
-            Log.d(TAG, "initializeOrderBook $orderBookData")
             binanceApiAsyncRestClient.getOrderBook(
                     currencyPairSymbol.toUpperCase(),
-                    20,
-                    {
-                        orderBookData = OrderBookData(it)
-                        isOrderBookBeingInitialized.set(false)
-                    })
+                    20)
+                    .subscribe(
+                            {
+                                orderBookData = OrderBookData(it)
+                                isOrderBookBeingInitialized.set(false)
+                            },
+                            {
+                                Log.d(TAG, "Could not get order book for $currencyPairSymbol")
+                            })
         }
     }
 
     fun listenForChanges(): Flowable<OrderBookData> {
-        return binanceWebSocketClient.listenForDepthEvents(currencyPairSymbol)
-                .doOnNext { onWebSocketDepthStreamConnected() }
-                .flatMap { depthEvent ->
-                    val orderBookData = onOrderBookEvent(depthEvent)
-                    Log.d(TAG, " listenForChanges ${isOrderBookValid(orderBookData)}")
-                    if (isOrderBookValid(orderBookData)) {
-                        return@flatMap Flowable.just(orderBookData)
+        depthEventsSocket = binanceWebSocketClient.listenForDepthEvents(currencyPairSymbol)
+        val depthEventsSocket = depthEventsSocket
+        if (depthEventsSocket != null) {
+            return depthEventsSocket.toFlowable()
+                    .doOnNext { onWebSocketDepthStreamConnected() }
+                    .flatMap { depthEvent ->
+                        val orderBookData = onOrderBookEvent(depthEvent)
+                        if (isOrderBookValid(orderBookData)) {
+                            return@flatMap Flowable.just(orderBookData)
+                        }
+                        return@flatMap Flowable.empty<OrderBookData>()
                     }
-                    return@flatMap Flowable.empty<OrderBookData>()
-                }
+        }
+        return Flowable.empty()
+    }
+
+    fun closeSockets() {
+        this.depthEventsSocket?.closeSocket()
+        binanceWebSocketClient
     }
 
     private fun onWebSocketDepthStreamConnected() {
@@ -78,7 +89,6 @@ class OrderBookAggregator(private val currencyPairSymbol: String,
         val shouldInvalidateOrderBook =
                 buffer.isNotEmpty()
                         && depthEvent.firstUpdateId != buffer.last.finalUpdateId + 1
-        Log.d(TAG, "onOrderBookEvent shouldInvalidateOrderBook $shouldInvalidateOrderBook, $depthEvent")
         if (shouldInvalidateOrderBook) {
             initializeOrderBook()
         }
@@ -101,12 +111,6 @@ class OrderBookAggregator(private val currencyPairSymbol: String,
                 val shouldProcessDepthEvent: Boolean =
                         depthEvent.firstUpdateId <= orderBookData.lastUpdateId + 1
                                 && depthEvent.finalUpdateId >= orderBookData.lastUpdateId + 1
-
-                Log.d(TAG, "shouldDropDepthEvent $shouldDropDepthEvent," +
-                        "shouldProcessDepthEvent $shouldProcessDepthEvent," +
-                        "firstUpdateId  ${depthEvent.firstUpdateId} " +
-                        "finalUpdateId ${depthEvent.finalUpdateId}," +
-                        "lastUpdateId ${orderBookData.lastUpdateId}")
 
                 if (!shouldDropDepthEvent && shouldProcessDepthEvent) {
                     orderBookData.onOrderBookChanged(depthEvent)
@@ -143,11 +147,9 @@ class OrderBookData(val asks: MutableMap<String, OrderBookEntry>,
 
     fun onOrderBookChanged(depthEvent: DepthEvent) {
         lastUpdateId = depthEvent.finalUpdateId
-        Log.d(TAG, "onOrderBookChanged $depthEvent")
         //-The data in each event is the absolute quantity for a price level
         //-If the quantity is 0, remove the price level
         //-Receiving an event that removes a price level that is not in your local order book can happen and is normal.
-//        FIXME: handle depth event and process asks/bids
         depthEvent.asks.forEach {
             val existingAskEntry: OrderBookEntry? = asks[it.price]
             //if amount is 0, remove it

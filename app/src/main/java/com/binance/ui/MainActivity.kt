@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.databinding.DataBindingUtil
 import android.os.Bundle
 import android.support.v4.view.ViewPager
+import android.view.Menu
+import android.view.MenuItem
 import com.binance.R
 import com.binance.api.client.domain.general.ExchangeInfo
 import com.binance.currencypairs.ui.QuoteCurrencyPairsFragment
@@ -17,17 +19,11 @@ class MainActivity : KodeinAppCompatActivity() {
 
     private val exchangeInfo by instance<InMemory<ExchangeInfo>>()
 
+    private val quoteAssets = listOf("BNB", "BTC", "ETH", "USDT")
+
     companion object {
         val TAG = MainActivity::javaClass.name
-
-        init {
-//            val policy = StrictMode.ThreadPolicy.Builder().detectAll().build()
-//            StrictMode.setThreadPolicy(policy)
-        }
     }
-
-    //FIXME: get queote assets form server
-    val quoteAssets = listOf("BNB", "BTC", "ETH", "USDT")
 
     @SuppressLint("MissingSuperCall")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,26 +41,22 @@ class MainActivity : KodeinAppCompatActivity() {
         val adapter = ViewPagerAdapter(supportFragmentManager)
 
         // Add Fragments to adapter one by one
-        //FIXME: refactor to string resource
-        adapter.addFragment(QuoteCurrencyPairsFragment.newInstance(true), "Favorites")
+        adapter.addFragment(QuoteCurrencyPairsFragment.newInstance(true), getString(R.string.favorites))
 
         quoteAssets.forEach { adapter.addFragment(QuoteCurrencyPairsFragment.newInstance(it), it) }
-
+        pager.offscreenPageLimit = adapter.count
         pager.adapter = adapter
         //scroll to the second page by default
         pager.setCurrentItem(1, false)
+
     }
 
-//    fun onCreateOptionsMenu(menu: Menu): Boolean {
-//        menuInflater.inflate(R.menu.menu_main, menu)
-//        return true
-//    }
-//
-//    fun onOptionsItemSelected(item: MenuItem): Boolean {
-//        val id = item.getItemId()
-//        return if (id == R.id.action_settings) {
-//            true
-//        } else super.onOptionsItemSelected(item)
-//
-//    }
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return super.onOptionsItemSelected(item)
+    }
 }

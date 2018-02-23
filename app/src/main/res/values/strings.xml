@@ -13,4 +13,8 @@
     <string name="high">High</string>
     <string name="currencyPairPlaceholder">%1$s/%2$s</string>
     <string name="favorites">Favorites</string>
+    <string name="empty_order_book_or_trade_item_placeholder">--</string>
+    <string name="time">Time</string>
+    <string name="price">Price</string>
+    <string name="amount">Amount</string>
 </resources>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="5dp"
+        android:background="@color/dark_background"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tradeTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:gravity="end"
+            android:textAlignment="textEnd"
+            android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+            android:textColor="@android:color/white"
+            android:textSize="@dimen/orderBookTextSize"
+            tools:text="11:14:01" />
+        <TextView
+            android:layout_centerHorizontal="true"
+            android:id="@+id/tradePrice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="start"
+            android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+            android:textColor="@color/buyGreen"
+            android:textSize="@dimen/orderBookTextSize"
+            tools:text="0.8713847" />
+
+        <TextView
+            android:layout_alignParentEnd="true"
+            android:id="@+id/tradeAmount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:gravity="end"
+            android:textAlignment="textEnd"
+            android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+            android:textColor="@android:color/white"
+            android:textSize="@dimen/orderBookTextSize"
+            tools:text="1.4" />
+    </RelativeLayout>
+</layout>

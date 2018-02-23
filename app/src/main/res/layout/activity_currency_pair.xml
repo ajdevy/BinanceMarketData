@@ -166,7 +166,7 @@
             <com.binance.util.ui.NonSwipeableViewPager
                 android:id="@+id/liveMarketDataPager"
                 android:layout_width="match_parent"
-                android:layout_height="380dp"
+                android:layout_height="310dp"
                 android:layout_below="@id/viewPagerSwitcher"
                 android:paddingEnd="@dimen/currencyPairActivitySidePadding"
                 android:paddingStart="@dimen/currencyPairActivitySidePadding" />

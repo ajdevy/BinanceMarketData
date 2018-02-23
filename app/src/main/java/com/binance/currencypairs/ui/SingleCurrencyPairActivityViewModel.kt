@@ -7,6 +7,10 @@ import com.binance.currencypairs.data.CurrencyPairMarketData
 
 class SingleCurrencyPairActivityViewModel : ViewModel() {
 
+    companion object {
+        val BOTTOM_LIST_MAX_ITEM_COUNT = 16
+    }
+
     val currencyPairMarketData = MutableLiveData<CurrencyPairMarketData>()
 
     val quoteCurrencyToUsdMarketData = MutableLiveData<CurrencyPairMarketData>()

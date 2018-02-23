@@ -97,11 +97,9 @@ class SingleCurrencyPairActivity : KodeinAppCompatActivity() {
                 val existingFavorites = favoritesPreference.get()
                 val symbol = getSymbolExtra()
                 if (existingFavorites.contains(symbol)) {
-//                    item.icon = getDrawable(android.R.drawable.star_big_off)
                     favoritesPreference.set(existingFavorites.minus(symbol))
                 } else {
                     favoritesPreference.set(existingFavorites.plus(symbol))
-//                    item.icon = getDrawable(android.R.drawable.star_big_on)
                 }
                 invalidateOptionsMenu()
                 return true
@@ -180,7 +178,7 @@ class SingleCurrencyPairActivity : KodeinAppCompatActivity() {
                 this,
                 Observer { currentMarketData ->
                     currentMarketData?.let { currentMarketData ->
-                        mapPrices(binding,currentMarketData)
+                        mapPrices(binding, currentMarketData)
 
                         //map price change percentage
                         binding.priceChangePercentage.text =

@@ -63,7 +63,6 @@ class QuoteCurrencyPairsFragment : KodeinSupportFragment() {
         val binding = DataBindingUtil.inflate<FragmentCurrencyPairsBinding>(
                 inflater, R.layout.fragment_currency_pairs, container, false)
 
-        Log.d(TAG,"onCreateView")
         setupListView(binding.recyclerView)
 
         return binding.root

@@ -9,12 +9,15 @@ import com.binance.databinding.ItemTradeBinding
 import com.binance.trades.data.TradeData
 import com.binance.util.removeTrailingZeros
 import org.joda.time.DateTimeZone
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 class TradesAdapter :
         RecyclerView.Adapter<TradesAdapter.TradesDataViewHolder>() {
 
     private var items: MutableList<TradeData> = ArrayList()
     private var dateTimeZone: DateTimeZone = DateTimeZone.getDefault()
+    private var priceScale: Int? = null
 
     init {
         setHasStableIds(true)
@@ -29,7 +32,7 @@ class TradesAdapter :
 
     override fun onBindViewHolder(holder: TradesDataViewHolder, position: Int) {
         if (items.size > position) {
-            holder.bind(items[position], dateTimeZone)
+            holder.bind(items[position], dateTimeZone, priceScale)
         } else {
             holder.bindEmptyItem()
         }
@@ -49,7 +52,7 @@ class TradesAdapter :
 
     fun addItems(newItems: List<TradeData>) {
         newItems.forEach {
-            if(!items.contains(it)) items.add(it)
+            if (!items.contains(it)) items.add(it)
         }
         sortAndRemoveUnneededItems()
         notifyDataSetChanged()
@@ -74,10 +77,17 @@ class TradesAdapter :
     class TradesDataViewHolder(var binding: ItemTradeBinding) : RecyclerView.ViewHolder(binding.root) {
 
         @SuppressLint("SetTextI18n")
-        fun bind(tradeData: TradeData, dateTimeZone: DateTimeZone) {
-            binding.tradePrice.text = tradeData.price
+        fun bind(tradeData: TradeData, dateTimeZone: DateTimeZone, priceScale: Int?) {
+            binding.tradePrice.text =
+                    if (priceScale != null) {
+                        BigDecimal(tradeData.price).setScale(priceScale, RoundingMode.HALF_UP).toString()
+                    } else {
+                        tradeData.price
+                    }
+
             binding.tradeAmount.text = tradeData.quantity.removeTrailingZeros()
             binding.tradeTime.text = tradeData.tradeTime.withZone(dateTimeZone).toString("hh:mm:ss")
+
             if (tradeData.isBuyerMaker) {
                 binding.tradePrice.setTextColor(binding.root.context.getColor(R.color.sellRed))
             } else {
@@ -96,5 +106,9 @@ class TradesAdapter :
 
     fun setTimezone(timezone: String) {
         dateTimeZone = DateTimeZone.forID(timezone)
+    }
+
+    fun setPriceScale(priceScale: Int?) {
+        this.priceScale = priceScale
     }
 }

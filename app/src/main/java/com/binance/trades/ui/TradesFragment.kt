@@ -19,10 +19,12 @@ import com.binance.databinding.FragmentTradesBinding
 import com.binance.rest.MyBinanceApiAsyncRestClient
 import com.binance.trades.data.TradeData
 import com.binance.util.InMemory
+import com.binance.util.getQuotePrecisionFromMinimalPrice
 import com.binance.websocket.MyBinanceApiWebSocketClient
 import com.github.salomonbrys.kodein.android.KodeinSupportFragment
 import com.github.salomonbrys.kodein.instance
 import com.trello.rxlifecycle2.kotlin.bindToLifecycle
+import io.reactivex.Flowable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 
@@ -63,11 +65,18 @@ class TradesFragment : KodeinSupportFragment() {
 
         val symbol = getSymbolArgument()
 
+        setupSymbolInfo(binding)
         setupTimezone(binding.recyclerView)
         getAndShowLastTrades(binding.recyclerView, symbol)
         listenForNewTrades(binding.recyclerView, symbol)
 
         return binding.root
+    }
+
+    @SuppressLint("MissingSuperCall")
+    override fun onDestroy() {
+        super.onDestroy()
+        tradesWebSocket?.closeSocket()
     }
 
     private fun setupTimezone(recyclerView: RecyclerView) {
@@ -80,12 +89,6 @@ class TradesFragment : KodeinSupportFragment() {
                             fragmentViewModel.timezone.value = it.timezone
                         },
                         { Log.e(TAG, "Could not get exchange info for timezone") })
-    }
-
-    @SuppressLint("MissingSuperCall")
-    override fun onDestroy() {
-        super.onDestroy()
-        tradesWebSocket?.closeSocket()
     }
 
     private fun getAndShowLastTrades(recyclerView: RecyclerView, symbol: String) {
@@ -146,6 +149,34 @@ class TradesFragment : KodeinSupportFragment() {
                 Observer {
                     it?.let { recyclerViewAdapter.setTimezone(it) }
                 })
+
+        fragmentViewModel.symbolInfo.observe(
+                this,
+                Observer {
+                    it?.let {
+                        recyclerViewAdapter.setPriceScale(it.getQuotePrecisionFromMinimalPrice())
+                    }
+                })
+    }
+
+    private fun setupSymbolInfo(binding: FragmentTradesBinding) {
+        val currentCurrencyPairSymbol = getSymbolArgument().toLowerCase()
+
+        exchangeInfo.asObservable()
+                .flatMap { Flowable.fromIterable(it.symbols) }
+                .filter { it.symbol.toLowerCase() == currentCurrencyPairSymbol }
+                .firstElement()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .bindToLifecycle(binding.root)
+                .subscribe(
+                        {
+                            fragmentViewModel.symbolInfo.value = it
+                        },
+                        {
+                            Log.e(TAG, "Could not get info for symbol $currentCurrencyPairSymbol," +
+                                    " $exchangeInfo", it)
+                        })
     }
 
     private fun getSymbolArgument(): String {
